@@ -21,6 +21,21 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Path.msg"
+  DEPENDENCIES geometry_msgs std_msgs
+)
+
+add_executable(placeholder src/placeholder.cpp)
+ament_target_dependencies(placeholder rclcpp geometry_msgs)
+rosidl_target_interfaces(placeholder ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+install(TARGETS
+  placeholder
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
