@@ -28,13 +28,23 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES geometry_msgs std_msgs
 )
 
-add_executable(placeholder src/placeholder.cpp)
-ament_target_dependencies(placeholder rclcpp geometry_msgs)
-rosidl_target_interfaces(placeholder ${PROJECT_NAME} "rosidl_typesupport_cpp")
+add_executable(merger src/merger.cpp)
+ament_target_dependencies(merger rclcpp geometry_msgs visualization_msgs)
+rosidl_target_interfaces(merger ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+add_executable(input src/input_paths.cpp)
+ament_target_dependencies(input rclcpp geometry_msgs)
+rosidl_target_interfaces(input ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS
-  placeholder
+  merger
+  input
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
