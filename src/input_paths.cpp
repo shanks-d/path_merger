@@ -19,7 +19,7 @@ class PathPublisher : public rclcpp::Node
 {
   public:
     PathPublisher()
-    : Node("Input_Paths_publisher"){
+    : Node("input_paths_publisher"){
         initializePaths();
 
         pub1_ = this->create_publisher<Path>("path1", 10);

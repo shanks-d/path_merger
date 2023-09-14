@@ -6,7 +6,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "visualization_msgs/msg/marker.hpp"
 #include "path_merger/msg/path.hpp"
 
 using std::placeholders::_1;
@@ -78,9 +77,9 @@ class Merger : public rclcpp::Node
     Path path2_;
     Path mergedPath_;
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<path_merger::msg::Path>::SharedPtr pubMergedPath_;
-    rclcpp::Subscription<path_merger::msg::Path>::SharedPtr subPath1_;
-    rclcpp::Subscription<path_merger::msg::Path>::SharedPtr subPath2_;
+    rclcpp::Publisher<Path>::SharedPtr pubMergedPath_;
+    rclcpp::Subscription<Path>::SharedPtr subPath1_;
+    rclcpp::Subscription<Path>::SharedPtr subPath2_;
     bool receivedPath1_ = false;
     bool receivedPath2_ = false;
     bool publishedPath_ = false;
