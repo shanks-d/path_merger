@@ -29,7 +29,7 @@ class Visualize : public rclcpp::Node
 
         visualizePaths();
         timer_ = this->create_wall_timer(
-        500ms, std::bind(&Visualize::visualizePaths, this));
+        20s, std::bind(&Visualize::visualizePaths, this));
     }
 
   private:
@@ -130,10 +130,18 @@ class Visualize : public rclcpp::Node
             pubPath_->publish(linePoints2);
             
             if(receivedMergedPath_){
-                lineStripMerged.points = mergedPath_.points;
-                linePointsMerged.points = mergedPath_.points;
-                pubPath_->publish(lineStripMerged);
-                pubPath_->publish(linePointsMerged);
+                // lineStripMerged.points = mergedPath_.points;
+                // linePointsMerged.points = mergedPath_.points;
+                // pubPath_->publish(lineStripMerged);
+                // pubPath_->publish(linePointsMerged);
+                std::chrono::duration<int, std::nano> delay(500000000);
+                for(const auto& point: mergedPath_.points){
+                    lineStripMerged.points.push_back(point);
+                    linePointsMerged.points.push_back(point);
+                    pubPath_->publish(lineStripMerged);
+                    pubPath_->publish(linePointsMerged);
+                    rclcpp::sleep_for(delay);
+                }
             }
         }
     }

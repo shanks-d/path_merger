@@ -14,7 +14,7 @@
 std::vector<float> path1_x, path1_y;
 std::vector<float> path2_x, path2_y;
 
-const float resolution = 0.2;   // meters per pixel
+const float resolution = 0.25;   // meters per pixel
 
 void laneChange(){
     // path1
