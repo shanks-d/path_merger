@@ -18,10 +18,7 @@ using namespace std::chrono_literals;
 // system path to the path_merger package
 #define packageDir "/home/shanks/ros2_ws/src/path_merger"
 
-// const std::vector<std::pair<float, float>> p1 {{1,0}, {2,0}, {3,0}, {4,0}, {5,0}, {6,0}, {7,0}, {8,0}, {9,0}};
-// const std::vector<std::pair<float, float>> p2 {{5,-0.5}, {6,-1.5}, {7,-2}, {8,-3}, {9,-5}};
-
-const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}};
+const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}, {2, "Right Turn"}};
 
 class PathPublisher : public rclcpp::Node
 {
@@ -30,7 +27,6 @@ class PathPublisher : public rclcpp::Node
     : Node("input_paths_publisher"){
         this->declare_parameter("test_scenario", 1);    //default scenario 1
 
-        // initializePaths();
         readPathData();
 
         pub1_ = this->create_publisher<Path>("path1", 10);
@@ -112,29 +108,6 @@ class PathPublisher : public rclcpp::Node
         path2_.header.stamp = now;
         path2_.header.frame_id = "path2";
     }
-
-    // void initializePaths(){
-    //     // Path1
-    //     rclcpp::Time now = this->get_clock()->now();
-    //     path1_.header.stamp = now - rclcpp::Duration(500000000);  //time gap of 500ms
-    //     path1_.header.frame_id = "path1";
-    //     for(auto p: p1){
-    //         Point point;
-    //         point.x = p.first;
-    //         point.y = p.second;
-    //         path1_.points.push_back(point);
-    //     }
-
-    //     // Path2
-    //     path2_.header.stamp = now;
-    //     path2_.header.frame_id = "path2";
-    //     for(auto p: p2){
-    //         Point point;
-    //         point.x = p.first;
-    //         point.y = p.second;
-    //         path2_.points.push_back(point);
-    //     }
-    // }
 
     void pub1Callback(){
         pub1_->publish(path1_);

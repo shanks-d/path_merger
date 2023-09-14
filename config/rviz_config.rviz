@@ -48,10 +48,12 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
+        merged_path: true
         path1: true
         path2: true
         waypoints1: true
         waypoints2: true
+        waypoints_merged: true
       Topic:
         Depth: 6
         Durability Policy: Volatile
@@ -102,16 +104,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 19.790306091308594
+      Distance: 16.8592472076416
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.8812898397445679
-        Y: -1.4457980394363403
-        Z: 0.1833145171403885
+        X: -1.9833542108535767
+        Y: -1.9707608222961426
+        Z: 0.18278931081295013
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -120,7 +122,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.708562850952148
+      Yaw: 4.713562965393066
     Saved: ~
 Window Geometry:
   Displays:
