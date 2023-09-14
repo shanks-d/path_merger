@@ -40,10 +40,14 @@ add_executable(visualize src/visualize_paths.cpp)
 ament_target_dependencies(visualize rclcpp visualization_msgs)
 rosidl_target_interfaces(visualize ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
+add_executable(generate src/generate_paths.cpp)
+ament_target_dependencies(generate rclcpp)
+
 install(TARGETS
   merger
   input
   visualize
+  generate
   DESTINATION lib/${PROJECT_NAME}
 )
 
