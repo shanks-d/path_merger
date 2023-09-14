@@ -8,7 +8,7 @@ Panels:
         - /Marker1
         - /Marker1/Topic1
         - /Marker1/Namespaces1
-      Splitter Ratio: 0.5
+      Splitter Ratio: 0.6352941393852234
     Tree Height: 617
   - Class: rviz_common/Selection
     Name: Selection
@@ -48,9 +48,14 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
-        markers: true
+        merged_path: true
+        path1: true
+        path2: true
+        waypoints1: true
+        waypoints2: true
+        waypoints_merged: true
       Topic:
-        Depth: 5
+        Depth: 6
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable

@@ -52,22 +52,23 @@ class Merger : public rclcpp::Node
         pubMergedPath_->publish(mergedPath_);
         publishedPath_ = true;
         RCLCPP_INFO_ONCE(this->get_logger(), "Merged path published!");
-
-        // uncomment this to allow resubscription of new input paths
-        // receivedPath1_ = receivedPath2_ = false;
     }
 
     void mergePaths(){
-        if(receivedPath1_ && receivedPath2_){
-            // consider path2 as the merged path
-            mergedPath_.points = path2_.points;
-            
-            // publish the merged path
-            publishPath();
+        // only performing merging operation once
+        if(!publishedPath_){
+            if(receivedPath1_ && receivedPath2_){
+                // consider path2 as the merged path
+                mergedPath_.points = path2_.points;
+                
+                // publish the merged path
+                publishPath();
+            }
+            else{
+                RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for the input paths to be subscribed...");
+            }
         }
-        RCLCPP_INFO_ONCE(this->get_logger(), "Waiting for the input paths to be subscribed...");
-
-        if(publishedPath_){
+        else{
             // publish the merged path
             publishPath();
         }
@@ -80,6 +81,7 @@ class Merger : public rclcpp::Node
     rclcpp::Publisher<Path>::SharedPtr pubMergedPath_;
     rclcpp::Subscription<Path>::SharedPtr subPath1_;
     rclcpp::Subscription<Path>::SharedPtr subPath2_;
+    // debouncing flags
     bool receivedPath1_ = false;
     bool receivedPath2_ = false;
     bool publishedPath_ = false;
