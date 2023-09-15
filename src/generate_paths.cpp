@@ -12,6 +12,9 @@
 #define LANE_CHANGE 1
 #define RIGHT_TURN 2
 #define U_TURN 3
+#define QUICK_OVERTAKE 4
+#define STOP_SIGN 5
+#define TWO_TURNS 6
 
 std::vector<float> path1_x, path1_y;
 std::vector<float> path2_x, path2_y;
@@ -51,11 +54,6 @@ void laneChange(){
         y = sin(0.1*M_PI*x);
         path2_x.push_back(x);
         path2_y.push_back(y);
-    }
-
-    // check if paths are of equal lengths 
-    if(path1_x.size() != path2_x.size()){
-        throw std::runtime_error("Unequal path lengths");
     }
 }
 
@@ -113,11 +111,6 @@ void rightTurn(){
         path2_x.push_back(x);
         path2_y.push_back(y);
     }
-
-    // check if paths are of equal lengths 
-    if(path1_x.size() != path2_x.size()){
-        throw std::runtime_error("Unequal path lengths");
-    }
 }
 
 void uTurn(){
@@ -165,10 +158,197 @@ void uTurn(){
         path2_x.push_back(x);
         path2_y.push_back(y);
     }
+}
 
-    // check if paths are of equal lengths 
-    if(path1_x.size() != path2_x.size()){
-        throw std::runtime_error("Unequal path lengths");
+void stopSign(){
+    // path1
+    // straight segment
+    float y = 0.0;
+    float x = 0.0;
+    float x1 = -7.0, x2 = -3.0;
+    int size = (x2 - x1)/resolution;
+    for(int i = 0; i <= size; i++){
+        x = x1 + i*resolution;
+        path1_x.push_back(x);
+        path1_y.push_back(y);
+    }
+    // brake segment
+    y = 0.0;
+    x = -3.0;
+    size = 28;
+    float acc = -0.01;
+    float vel = resolution;
+    for(int i = 0; i < size; i++){
+        vel += acc;
+        vel = (vel > 0.0) ? vel : 0.0;  // stops at 0 velocity
+        x += vel;
+        path1_x.push_back(x);
+        path1_y.push_back(y);
+    }
+
+    // path2
+    // straight segment
+    y = 0.0;
+    x1 = -4.0;
+    x2 = -3.0;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    x1 = -3.0;
+    x2 = -0.5;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        y = 0.3/x + 0.1;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    float y1 = -0.5;
+    float y2 = -3.0;
+    size = (y1 - y2)/resolution;
+    for(int i = 0; i < size; i++){
+        y = y1 - i*resolution;
+        x = 0.3/(y - 0.1);
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // straight segment
+    x = -0.1;
+    y1 = -3.0;
+    y2 = -8.0;
+    size = (y1 - y2)/resolution;
+    for(int i = 0; i <= size; i++){
+        y = y1 - i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+}
+
+void quickOvertake(){
+    // path1
+    // straight segment
+    float y = -0.5;
+    float x = 0.0;
+    float x1 = -3.0, x2 = 3.0;
+    int size = (x2 - x1)/resolution;
+    for(int i = 0; i <= size; i++){
+        x = x1 + i*resolution;
+        path1_x.push_back(x);
+        path1_y.push_back(y);
+    }
+    
+    // path2
+    // straight segment
+    y = -0.5;
+    x1 = -1.0;
+    x2 = -0.5;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    x1 = -0.5;
+    x2 = 2.0;
+    size = 15;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*0.17;
+        y = 0.5*sin(0.8*M_PI*x);
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // straight segment
+    y = -0.5;
+    x1 = 2.0;
+    x2 = 4.0;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+}
+
+void twoTurns(){
+    // path1
+    // straight segment
+    float y = 0.0;
+    float x = 0.0;
+    float x1 = -7.0;
+    float x2 = -3.0;
+    int size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path1_x.push_back(x);
+        path1_y.push_back(y);
+    }
+    // curved segment
+    x1 = -3.0;
+    x2 = -0.5;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        y = 0.3/x + 0.1;
+        path1_x.push_back(x);
+        path1_y.push_back(-y);
+    }
+    // curved segment
+    float y1 = -0.5;
+    float y2 = -3.0;
+    size = (y1 - y2)/resolution;
+    for(int i = 0; i <= size; i++){
+        y = y1 - i*resolution;
+        x = 0.3/(y - 0.1);
+        path1_x.push_back(x);
+        path1_y.push_back(-y);
+    }
+    
+    // path2
+    // straight segment
+    y = 0.0;
+    x1 = -4.0;
+    x2 = -3.0;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    x1 = -3.0;
+    x2 = -0.5;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        y = 0.3/x + 0.1;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    y1 = -0.5;
+    y2 = -3.0;
+    size = (y1 - y2)/resolution;
+    for(int i = 0; i < size; i++){
+        y = y1 - i*resolution;
+        x = 0.3/(y - 0.1);
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // straight segment
+    x = -0.1;
+    y1 = -3.0;
+    y2 = -6.0;
+    size = (y1 - y2)/resolution;
+    for(int i = 0; i <= size; i++){
+        y = y1 - i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
     }
 }
 
@@ -179,19 +359,47 @@ void shift2InY(float h){
     }
 }
 
+// check for path length consistencies
+void checkPaths(){
+    // both the paths should be of equal lengths
+    if(path1_x.size() != path1_y.size() || path2_x.size() != path2_y.size() || path1_x.size() != path2_x.size()){
+        throw std::runtime_error("Unequal path lengths, path1: " + 
+                                    std::to_string(path1_x.size()) + "," + std::to_string(path1_y.size()) + ", path2: " + 
+                                    std::to_string(path2_x.size()) + "," + std::to_string(path2_y.size()));
+    }
+}
+
 // compute waypoints for different scenarios
 void computePoints(int scenario){
     switch(scenario){
         case 1:
             laneChange();
+            checkPaths();
             shift2InY(0.25);
             break;
         case 2:
             rightTurn();
+            checkPaths();
             shift2InY(0.25);
             break;
         case 3:
             uTurn();
+            checkPaths();
+            shift2InY(-0.25);
+            break;
+        case 4:
+            quickOvertake();
+            checkPaths();
+            shift2InY(0.25);
+            break;
+        case 5:
+            stopSign();
+            checkPaths();
+            shift2InY(-0.25);
+            break;
+        case 6:
+            twoTurns();
+            checkPaths();
             shift2InY(-0.25);
             break;
         default:
@@ -221,11 +429,11 @@ int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
 
-    // scenarios: LANE_CHANGE, RIGHT_TURN U_TURN
-    computePoints(U_TURN);
+    // scenarios: LANE_CHANGE, RIGHT_TURN, U_TURN, QUICK_OVERTAKE, STOP_SIGN, TWO_TURNS
+    computePoints(TWO_TURNS);
     
     // write the vector to CSV
-    writePathData("scenario3.csv");
+    writePathData("scenario6.csv");
 
     rclcpp::shutdown();
     return 0;

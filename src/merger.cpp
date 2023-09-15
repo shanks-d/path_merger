@@ -216,7 +216,7 @@ class Merger : public rclcpp::Node
     bool publishedPath_ = false;
     // constants
     const float distThreshold_ = 0.75;
-    const float kTheta = 0.5;
+    const float kTheta = 0.2;
     // parameters
     float alpha_ = 1.0;
     float beta_ = 0.1;
