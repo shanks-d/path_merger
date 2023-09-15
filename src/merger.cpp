@@ -59,6 +59,16 @@ class Merger : public rclcpp::Node
         return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
     }
 
+    // limits val such that it lies within [0, 1] 
+    void truncate(float& val){
+        if(val > 1.0){
+            val = 1.0;
+        }
+        else if(val < 0.0){
+            val = 0.0;
+        }
+    }
+
     // find the point index of path1 closest to the start of path2
     int findTransitionIndex(){
         int index = 0;
@@ -92,6 +102,11 @@ class Merger : public rclcpp::Node
                     
                     RCLCPP_INFO(this->get_logger(), "Transition begins");
 
+                    // initialize prevTheta
+                    float thetaC1 = atan2(path1_.points[idx1].y - path1_.points[idx1-1].y, path1_.points[idx1].x - path1_.points[idx1-1].x);
+                    float thetaC2 = atan2(path2_.points[idx2].y - path1_.points[idx1-1].y, path2_.points[idx2].x - path1_.points[idx1-1].x);
+                    prevTheta_ = thetaC2 - thetaC1;
+                    
                     // iterate over the remaining path1 points
                     for(int i = idx1; i < (int)path1_.points.size(); i++){
                         // current ego pose
@@ -103,40 +118,38 @@ class Merger : public rclcpp::Node
                         component1.y = path1_.points[idx1].y - curr.y;
                         component2.x = path2_.points[idx2].x - curr.x;
                         component2.y = path2_.points[idx2].y - curr.y;
+                        float thetaC2 = atan2(component2.y, component2.x);
 
                         // assign the weights
-                        alpha_ -= beta_;
-
-                        if(alpha_ > 1.0){
-                            alpha_ = 1.0;
-                        }
-                        else if(alpha_ < 0.0){
-                            alpha_ = 0.0;
-                        }
+                        alpha_ = alpha_ - beta_ - gamma_;
+                        truncate(alpha_);
 
                         // compute the resultant
                         Point resultant;
                         resultant.x = component1.x*alpha_ + component2.x*(1.0 - alpha_);
                         resultant.y = component1.y*alpha_ + component2.y*(1.0 - alpha_);
-
-                        // debug logs
-                        RCLCPP_INFO(this->get_logger(), "idx1: %d, idx2: %d, alpha: %f, beta: %f", idx1, idx2, alpha_, beta_);
+                        float thetaR = atan2(resultant.y, resultant.x);
 
                         // add the resultant to the merged_path
                         resultant.x += curr.x;
                         resultant.y += curr.y;
                         mergedPath_.points.push_back(resultant);
+                        
+                        // adjust the parameters
+                        currTheta_ = thetaC2 - thetaR;
+                        float dTheta = currTheta_ - prevTheta_;
+                        int dirFactor = (prevTheta_ < 0.0 || currTheta_ < 0.0) ? -1 : 1;    // inverts dTheta when Theta is -ve
+                        gamma_ = kTheta * dTheta * dirFactor;
 
-                        // adjust the weights
-                        // beta_ = beta_;
-
-                        // increment path indices
+                        // debug logs
+                        RCLCPP_INFO(this->get_logger(), "theta: %f, dTheta: %f, alpha: %f, beta: %f, gamma: %f", 
+                        currTheta_, dTheta, alpha_, beta_, gamma_);
+                        
+                        // update variables for next iteration
+                        prevTheta_ = currTheta_;
                         idx1++;
                         idx2++;
                     }
-
-                    // adjust the weights
-                    // beta_ = beta_;
 
                     // iterate over the rest of the path2
                     for(int i = idx2; i < (int)path2_.points.size(); i++){
@@ -149,34 +162,31 @@ class Merger : public rclcpp::Node
                         component2.y = path2_.points[idx2].y - curr.y;
                         component3.x = path2_.points[idx2].x - path2_.points[idx2-1].x;
                         component3.y = path2_.points[idx2].y - path2_.points[idx2-1].y;
+                        float thetaC2 = atan2(component2.y, component2.x);
 
                         // assign the weights
-                        alpha_ -= beta_;
-
-                        if(alpha_ > 1.0){
-                            alpha_ = 1.0;
-                        }
-                        else if(alpha_ < 0.0){
-                            alpha_ = 0.0;
-                        }
+                        alpha_ = alpha_ - beta_ - gamma_;
+                        truncate(alpha_);
 
                         // compute the resultant
                         Point resultant;
                         resultant.x = component3.x*alpha_ + component2.x*(1.0 - alpha_);
                         resultant.y = component3.y*alpha_ + component2.y*(1.0 - alpha_);
-
-                        // debug logs
-                        RCLCPP_INFO(this->get_logger(), "idx2: %d, alpha: %f, beta: %f", idx2, alpha_, beta_);
+                        float thetaR = atan2(resultant.y, resultant.x);
 
                         // add the resultant to the merged_path
                         resultant.x += curr.x;
                         resultant.y += curr.y;
                         mergedPath_.points.push_back(resultant);
 
-                        // adjust the weights
-                        // beta_ = beta_;
+                        // adjust the parameters
+                        currTheta_ = thetaC2 - thetaR;
+                        float dTheta = fabs(currTheta_ - prevTheta_);
+                        int dirFactor = (prevTheta_ < 0.0 || currTheta_ < 0.0) ? -1 : 1;    // inverts dTheta when Theta is -ve
+                        gamma_ = kTheta * dTheta * dirFactor;
 
-                        // increment path indices
+                        // update variables for next iteration
+                        prevTheta_ = currTheta_;
                         idx2++;
                     }
                 }
@@ -204,11 +214,15 @@ class Merger : public rclcpp::Node
     bool receivedPath1_ = false;
     bool receivedPath2_ = false;
     bool publishedPath_ = false;
-    // parameters
+    // constants
     const float distThreshold_ = 0.75;
-    // weights
+    const float kTheta = 0.5;
+    // parameters
     float alpha_ = 1.0;
     float beta_ = 0.1;
+    float gamma_ = 0.0;
+    float currTheta_ = 0.0;
+    float prevTheta_ = 0.0;
 };
 
 int main(int argc, char * argv[])
