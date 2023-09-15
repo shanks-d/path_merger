@@ -11,6 +11,7 @@
 
 #define LANE_CHANGE 1
 #define RIGHT_TURN 2
+#define U_TURN 3
 
 std::vector<float> path1_x, path1_y;
 std::vector<float> path2_x, path2_y;
@@ -119,6 +120,58 @@ void rightTurn(){
     }
 }
 
+void uTurn(){
+    // path1
+    // straight segment
+    float y = 1.0;
+    float x = 0.0;
+    float x1 = -6.0, x2 = 3.0;
+    int size = (x2 - x1)/resolution;
+    for(int i = 0; i <= size; i++){
+        x = x1 + i*resolution;
+        path1_x.push_back(x);
+        path1_y.push_back(y);
+    }
+    
+    // path2
+    // straight segment
+    y = 1.0;
+    x1 = -3.0;
+    x2 = -2.0;
+    size = (x2 - x1)/resolution;
+    for(int i = 0; i < size; i++){
+        x = x1 + i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // curved segment
+    float t = 0.0;
+    float dt = 0.1;
+    size = 10;
+    for(int i = 0; i < size; i++){
+        float ti = t + i*dt;
+        x = 1.0*sin(M_PI*ti) - 2.0;
+        y = 1.0*cos(M_PI*ti);
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+    // straight segment
+    y = -1.0;
+    x1 = -2.0;
+    x2 = -7.5;
+    size = (x1 - x2)/resolution;
+    for(int i = 0; i <= size; i++){
+        x = x1 - i*resolution;
+        path2_x.push_back(x);
+        path2_y.push_back(y);
+    }
+
+    // check if paths are of equal lengths 
+    if(path1_x.size() != path2_x.size()){
+        throw std::runtime_error("Unequal path lengths");
+    }
+}
+
 // shift path2 along Y axis 
 void shift2InY(float h){
     for(int i = 0; i < (int)path2_y.size(); i++){
@@ -136,6 +189,10 @@ void computePoints(int scenario){
         case 2:
             rightTurn();
             shift2InY(0.25);
+            break;
+        case 3:
+            uTurn();
+            shift2InY(-0.25);
             break;
         default:
             throw std::runtime_error("Invalid scenario");
@@ -164,11 +221,11 @@ int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
 
-    // scenarios: LANE_CHANGE, RIGHT_TURN
-    computePoints(RIGHT_TURN);
+    // scenarios: LANE_CHANGE, RIGHT_TURN U_TURN
+    computePoints(U_TURN);
     
     // write the vector to CSV
-    writePathData("scenario2.csv");
+    writePathData("scenario3.csv");
 
     rclcpp::shutdown();
     return 0;

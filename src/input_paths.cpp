@@ -18,7 +18,7 @@ using namespace std::chrono_literals;
 // system path to the path_merger package
 #define packageDir "/home/shanks/ros2_ws/src/path_merger"
 
-const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}, {2, "Right Turn"}};
+const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}, {2, "Right Turn"}, {3, "U Turn"}};
 
 class PathPublisher : public rclcpp::Node
 {
