@@ -23,6 +23,11 @@ class Merger : public rclcpp::Node
         subPath2_ = this->create_subscription<Path>("path2", 10,
         std::bind(&Merger::path2Callback, this, _1));
 
+        // creating tuning variables as rosparams
+        this->declare_parameter("beta", 0.1);
+        this->declare_parameter("k", 0.2);
+        this->declare_parameter("rho", 1.0);
+
         pubMergedPath_ = this->create_publisher<Path>("merged_path", 10);
         timer_ = this->create_wall_timer(
         500ms, std::bind(&Merger::mergePaths, this));
@@ -95,13 +100,16 @@ class Merger : public rclcpp::Node
                     mergedPath_.points = path2_.points;
                 }
                 else{
+                    float beta = this->get_parameter("beta").as_double();
+                    float kTheta = this->get_parameter("k").as_double();
+                    float rho = this->get_parameter("rho").as_double();
+                    RCLCPP_INFO(this->get_logger(), "Merging with tuning params [beta: %.2f, kTheta: %.2f, rho: %.2f]", beta, kTheta, rho);
+
                     // copy all the points on path1 until the transition index
                     for(int i = 0; i < idx1; i++){
                         mergedPath_.points.push_back(path1_.points[i]);
                     }
                     
-                    RCLCPP_INFO(this->get_logger(), "Transition begins");
-
                     // initialize prevTheta
                     float thetaC1 = atan2(path1_.points[idx1].y - path1_.points[idx1-1].y, path1_.points[idx1].x - path1_.points[idx1-1].x);
                     float thetaC2 = atan2(path2_.points[idx2].y - path1_.points[idx1-1].y, path2_.points[idx2].x - path1_.points[idx1-1].x);
@@ -119,15 +127,23 @@ class Merger : public rclcpp::Node
                         component2.x = path2_.points[idx2].x - curr.x;
                         component2.y = path2_.points[idx2].y - curr.y;
                         float thetaC2 = atan2(component2.y, component2.x);
+                        
+                        // calculate inertia component
+                        Point prev = mergedPath_.points[(int)mergedPath_.points.size()-2];
+                        Point inertia;
+                        inertia.x = curr.x - prev.x;
+                        inertia.y = curr.y - prev.y;
 
-                        // assign the weights
-                        alpha_ = alpha_ - beta_ - gamma_;
-                        truncate(alpha_);
+                        // assign the weights if non-zero
+                        if(alpha_ > 0.0){
+                            alpha_ = alpha_ - beta - gamma_;
+                            truncate(alpha_);
+                        }
 
                         // compute the resultant
                         Point resultant;
-                        resultant.x = component1.x*alpha_ + component2.x*(1.0 - alpha_);
-                        resultant.y = component1.y*alpha_ + component2.y*(1.0 - alpha_);
+                        resultant.x = (component1.x*alpha_ + component2.x*(1.0 - alpha_) + inertia.x*rho) / (1 + rho);  //normalized using (1+rho)
+                        resultant.y = (component1.y*alpha_ + component2.y*(1.0 - alpha_) + inertia.y*rho) / (1 + rho);
                         float thetaR = atan2(resultant.y, resultant.x);
 
                         // add the resultant to the merged_path
@@ -142,8 +158,8 @@ class Merger : public rclcpp::Node
                         gamma_ = kTheta * dTheta * dirFactor;
 
                         // debug logs
-                        RCLCPP_INFO(this->get_logger(), "theta: %f, dTheta: %f, alpha: %f, beta: %f, gamma: %f", 
-                        currTheta_, dTheta, alpha_, beta_, gamma_);
+                        RCLCPP_INFO(this->get_logger(), "theta: %f, dTheta: %f, alpha: %f, gamma: %f", 
+                        currTheta_, dTheta, alpha_, gamma_);
                         
                         // update variables for next iteration
                         prevTheta_ = currTheta_;
@@ -164,14 +180,22 @@ class Merger : public rclcpp::Node
                         component3.y = path2_.points[idx2].y - path2_.points[idx2-1].y;
                         float thetaC2 = atan2(component2.y, component2.x);
 
-                        // assign the weights
-                        alpha_ = alpha_ - beta_ - gamma_;
-                        truncate(alpha_);
+                        // calculate inertia component
+                        Point prev = mergedPath_.points[(int)mergedPath_.points.size()-2];
+                        Point inertia;
+                        inertia.x = curr.x - prev.x;
+                        inertia.y = curr.y - prev.y;
+
+                        // assign the weights if non-zero
+                        if(alpha_ > 0.0){
+                            alpha_ = alpha_ - beta - gamma_;
+                            truncate(alpha_);
+                        }
 
                         // compute the resultant
                         Point resultant;
-                        resultant.x = component3.x*alpha_ + component2.x*(1.0 - alpha_);
-                        resultant.y = component3.y*alpha_ + component2.y*(1.0 - alpha_);
+                        resultant.x = (component3.x*alpha_ + component2.x*(1.0 - alpha_) + inertia.x*rho) / (1 + rho);  // normalized using (1+rho)
+                        resultant.y = (component3.y*alpha_ + component2.y*(1.0 - alpha_) + inertia.y*rho) / (1 + rho);
                         float thetaR = atan2(resultant.y, resultant.x);
 
                         // add the resultant to the merged_path
@@ -216,10 +240,8 @@ class Merger : public rclcpp::Node
     bool publishedPath_ = false;
     // constants
     const float distThreshold_ = 0.75;
-    const float kTheta = 0.2;
     // parameters
     float alpha_ = 1.0;
-    float beta_ = 0.1;
     float gamma_ = 0.0;
     float currTheta_ = 0.0;
     float prevTheta_ = 0.0;

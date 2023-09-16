@@ -234,7 +234,7 @@ void quickOvertake(){
     // straight segment
     float y = -0.5;
     float x = 0.0;
-    float x1 = -3.0, x2 = 3.0;
+    float x1 = -7.0, x2 = 1.0;
     int size = (x2 - x1)/resolution;
     for(int i = 0; i <= size; i++){
         x = x1 + i*resolution;
@@ -245,8 +245,8 @@ void quickOvertake(){
     // path2
     // straight segment
     y = -0.5;
-    x1 = -1.0;
-    x2 = -0.5;
+    x1 = -5.0;
+    x2 = -4.5;
     size = (x2 - x1)/resolution;
     for(int i = 0; i < size; i++){
         x = x1 + i*resolution;
@@ -260,13 +260,13 @@ void quickOvertake(){
     for(int i = 0; i < size; i++){
         x = x1 + i*0.17;
         y = 0.5*sin(0.8*M_PI*x);
-        path2_x.push_back(x);
+        path2_x.push_back(x-4.0);
         path2_y.push_back(y);
     }
     // straight segment
     y = -0.5;
-    x1 = 2.0;
-    x2 = 4.0;
+    x1 = -1.85;
+    x2 = 2.15;
     size = (x2 - x1)/resolution;
     for(int i = 0; i < size; i++){
         x = x1 + i*resolution;
@@ -430,10 +430,10 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
 
     // scenarios: LANE_CHANGE, RIGHT_TURN, U_TURN, QUICK_OVERTAKE, STOP_SIGN, TWO_TURNS
-    computePoints(TWO_TURNS);
+    computePoints(QUICK_OVERTAKE);
     
     // write the vector to CSV
-    writePathData("scenario6.csv");
+    writePathData("scenario4.csv");
 
     rclcpp::shutdown();
     return 0;
