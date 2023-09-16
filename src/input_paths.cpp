@@ -20,10 +20,11 @@ using namespace std::chrono_literals;
 
 const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}, 
                                                           {2, "Right Turn"}, 
-                                                          {3, "U Turn"}, 
+                                                          {3, "U Turn"},
                                                           {4, "Quick Overtake"}, 
                                                           {5, "Stop Sign"},
-                                                          {6, "Two Turns"}};
+                                                          {6, "Two Turns"},
+                                                          {7, "Failed Continuity"}};
 
 class PathPublisher : public rclcpp::Node
 {

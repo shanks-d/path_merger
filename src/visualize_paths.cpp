@@ -36,6 +36,7 @@ class Visualize : public rclcpp::Node
             path1_.points = msg->points;
             path1_.scenario = msg->scenario;
             receivedPath1_ = true;
+            mergedPath_.points.clear();    // clear old merged path in case of new inputs
         }
     }
 
@@ -44,6 +45,7 @@ class Visualize : public rclcpp::Node
             path2_.points = msg->points;
             path2_.scenario = msg->scenario;
             receivedPath2_ = true;
+            mergedPath_.points.clear();    // clear old merged path in case of new inputs
         }
     }
 
