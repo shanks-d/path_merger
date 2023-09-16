@@ -4,6 +4,9 @@
   <arg name="k"    default="0.2"/>
   <arg name="rho"  default="1.0"/>
 
+  <!-- include rviz launch file for visualization of the paths -->
+  <include file="$(find-pkg-share path_merger)/launch/rviz_launch.py"/>
+  
   <!-- start a path_merger node with launch args set to the params -->
   <node pkg="path_merger" exec="merger" name="path_merger">
     <param name="beta" value="$(var beta)"/>

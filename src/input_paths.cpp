@@ -32,27 +32,29 @@ class PathPublisher : public rclcpp::Node
     : Node("input_paths_publisher"){
         this->declare_parameter("test_scenario", 1);    //default scenario 1
 
+        RCLCPP_INFO(this->get_logger(), "Reading path data...");
         readPathData();
+        RCLCPP_INFO(this->get_logger(), "Input paths loaded");
 
         pub1_ = this->create_publisher<Path>("path1", 10);
-        timer1_ = this->create_wall_timer(1s, std::bind(&PathPublisher::pub1Callback, this));
-      
+    
         pub2_ = this->create_publisher<Path>("path2", 10);
-        timer2_ = this->create_wall_timer(1s, std::bind(&PathPublisher::pub2Callback, this));
+
+        timer_ = this->create_wall_timer(500ms, std::bind(&PathPublisher::pubCallback, this));
     }
 
   private:
     void readPathData(){
         
-        int scenario = this->get_parameter("test_scenario").as_int();
-        auto itr = scenarioNames.find(scenario);
-        if(itr == scenarioNames.end()){
+        int test_scenario = this->get_parameter("test_scenario").as_int();
+        auto scenario = scenarioNames.find(test_scenario);
+        if(scenario == scenarioNames.end()){
             throw std::runtime_error("Invalid scenario number");
         }
 
-        RCLCPP_INFO(this->get_logger(), "Scenario %d selected: %s!", scenario, itr->second.c_str());
+        RCLCPP_INFO(this->get_logger(), "Scenario %d selected: %s!", test_scenario, scenario->second.c_str());
         std::string filename(packageDir);
-        filename.append("/data/scenario" + std::to_string(scenario) + ".csv");
+        filename.append("/data/scenario" + std::to_string(test_scenario) + ".csv");
 
         // create an input filestream
         std::ifstream pathFile(filename);
@@ -112,22 +114,18 @@ class PathPublisher : public rclcpp::Node
         path1_.header.frame_id = "path1";
         path2_.header.stamp = now;
         path2_.header.frame_id = "path2";
+        path1_.scenario = path2_.scenario = scenario->second;
     }
-
-    void pub1Callback(){
+    
+    void pubCallback(){
         pub1_->publish(path1_);
-        RCLCPP_INFO_ONCE(this->get_logger(), "Publishing input path1");
-    }
-
-    void pub2Callback(){
         pub2_->publish(path2_);
-        RCLCPP_INFO_ONCE(this->get_logger(), "Publishing input path2");
+        RCLCPP_INFO_ONCE(this->get_logger(), "Publishing input paths...");
     }
 
     Path path1_;
     Path path2_;
-    rclcpp::TimerBase::SharedPtr timer1_;
-    rclcpp::TimerBase::SharedPtr timer2_;
+    rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<Path>::SharedPtr pub1_;
     rclcpp::Publisher<Path>::SharedPtr pub2_;
 };
