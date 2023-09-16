@@ -25,8 +25,9 @@ class Merger : public rclcpp::Node
 
         // creating tuning variables as rosparams
         this->declare_parameter("beta", 0.1);
-        this->declare_parameter("k", 0.2);
+        this->declare_parameter("k", 0.6);
         this->declare_parameter("rho", 1.0);
+        this->declare_parameter("delta", 0.2);
 
         pubMergedPath_ = this->create_publisher<Path>("merged_path", 10);
         timer_ = this->create_wall_timer(
@@ -93,9 +94,8 @@ class Merger : public rclcpp::Node
         // perform merging when the input paths are subcribed
         if(receivedPath1_ && receivedPath2_){
             int idx1 = findTransitionIndex();
-            int idx2 = 0;
             // check if path1 is relevant
-            if(calcDist(path1_.points[idx1], path2_.points[idx2]) >= distThreshold_){
+            if(calcDist(path1_.points[idx1], path2_.points[0]) >= distThreshold_){
                 RCLCPP_WARN(this->get_logger(), "Lost track of the old path");
                 mergedPath_.points = path2_.points;
             }
@@ -103,36 +103,44 @@ class Merger : public rclcpp::Node
                 float beta = this->get_parameter("beta").as_double();
                 float kTheta = this->get_parameter("k").as_double();
                 float rho = this->get_parameter("rho").as_double();
-                RCLCPP_INFO(this->get_logger(), "Merging with tuning params [beta: %.2f, kTheta: %.2f, rho: %.2f]", beta, kTheta, rho);
+                float delta = this->get_parameter("delta").as_double();
+                RCLCPP_INFO(this->get_logger(), "Merging with params [beta: %.2f, kTheta: %.2f, delta: %.2f, rho: %.2f]", beta, kTheta, delta, rho);
 
-                // copy all the points on path1 until the transition index
-                for(int i = 0; i < idx1; i++){
+                // copy all the points on path1 until the transition index (included)
+                for(int i = 0; i <= idx1; i++){
                     mergedPath_.points.push_back(path1_.points[i]);
                 }
                 
                 // initialize prevTheta
                 float thetaC1 = atan2(path1_.points[idx1].y - path1_.points[idx1-1].y, path1_.points[idx1].x - path1_.points[idx1-1].x);
-                float thetaC2 = atan2(path2_.points[idx2].y - path1_.points[idx1-1].y, path2_.points[idx2].x - path1_.points[idx1-1].x);
+                float thetaC2 = atan2(path2_.points[0].y - path1_.points[idx1-1].y, path2_.points[0].x - path1_.points[idx1-1].x);
                 prevTheta_ = thetaC2 - thetaC1;
+
+                // reset path indices
+                idx1++;         // merging from the next index of path1's transition index 
+                int idx2 = 1;   // begin path2 from second point such that component2 can be computed at the first loop iteration
                 
                 // iterate over the remaining path1 points
                 for(int i = idx1; i < (int)path1_.points.size(); i++){
-                    // current ego pose
-                    Point curr = mergedPath_.points.back();
-                
-                    // calculate the path components
+                    // calculate input path components
                     Point component1, component2;
-                    component1.x = path1_.points[idx1].x - curr.x;
-                    component1.y = path1_.points[idx1].y - curr.y;
-                    component2.x = path2_.points[idx2].x - curr.x;
-                    component2.y = path2_.points[idx2].y - curr.y;
+                    component1.x = path1_.points[idx1].x - path1_.points[idx1-1].x;
+                    component1.y = path1_.points[idx1].y - path1_.points[idx1-1].y;
+                    component2.x = path2_.points[idx2].x - path2_.points[idx2-1].x;
+                    component2.y = path2_.points[idx2].y - path2_.points[idx2-1].y;
                     float thetaC2 = atan2(component2.y, component2.x);
                     
                     // calculate inertia component
+                    Point curr = mergedPath_.points.back();
                     Point prev = mergedPath_.points[(int)mergedPath_.points.size()-2];
                     Point inertia;
                     inertia.x = curr.x - prev.x;
                     inertia.y = curr.y - prev.y;
+
+                    // calculate difference compoment
+                    Point component3;
+                    component3.x = path2_.points[idx2].x - curr.x;
+                    component3.y = path2_.points[idx2].y - curr.y;
 
                     // assign the weights if non-zero
                     if(alpha_ > 0.0){
@@ -140,10 +148,10 @@ class Merger : public rclcpp::Node
                         truncate(alpha_);
                     }
 
-                    // compute the resultant
+                    // compute the resultant with normalized weights
                     Point resultant;
-                    resultant.x = (component1.x*alpha_ + component2.x*(1.0 - alpha_) + inertia.x*rho) / (1 + rho);  //normalized using (1+rho)
-                    resultant.y = (component1.y*alpha_ + component2.y*(1.0 - alpha_) + inertia.y*rho) / (1 + rho);
+                    resultant.x = (component1.x*alpha_ + component2.x*(1.0 - alpha_) + component3.x*delta + inertia.x*rho) / (1 + delta + rho);     // normalized using (1+delta+rho)
+                    resultant.y = (component1.y*alpha_ + component2.y*(1.0 - alpha_) + component3.y*delta + inertia.y*rho) / (1 + delta + rho);
                     float thetaR = atan2(resultant.y, resultant.x);
 
                     // add the resultant to the merged_path
@@ -169,48 +177,34 @@ class Merger : public rclcpp::Node
 
                 // iterate over the rest of the path2
                 for(int i = idx2; i < (int)path2_.points.size(); i++){
-                    // current ego pose
-                    Point curr = mergedPath_.points.back();
-
-                    // calculate the path components
-                    Point component2, component3;
-                    component2.x = path2_.points[idx2].x - curr.x;
-                    component2.y = path2_.points[idx2].y - curr.y;
-                    component3.x = path2_.points[idx2].x - path2_.points[idx2-1].x;
-                    component3.y = path2_.points[idx2].y - path2_.points[idx2-1].y;
-                    float thetaC2 = atan2(component2.y, component2.x);
+                    // calculate input path component
+                    Point component2;
+                    component2.x = path2_.points[idx2].x - path2_.points[idx2-1].x;
+                    component2.y = path2_.points[idx2].y - path2_.points[idx2-1].y;
 
                     // calculate inertia component
+                    Point curr = mergedPath_.points.back();
                     Point prev = mergedPath_.points[(int)mergedPath_.points.size()-2];
                     Point inertia;
                     inertia.x = curr.x - prev.x;
                     inertia.y = curr.y - prev.y;
 
-                    // assign the weights if non-zero
-                    if(alpha_ > 0.0){
-                        alpha_ = alpha_ - beta - gamma_;
-                        truncate(alpha_);
-                    }
+                    // calculate difference compoment
+                    Point component3;
+                    component3.x = path2_.points[idx2].x - curr.x;
+                    component3.y = path2_.points[idx2].y - curr.y;
 
-                    // compute the resultant
+                    // compute the resultant with normalized weights
                     Point resultant;
-                    resultant.x = (component3.x*alpha_ + component2.x*(1.0 - alpha_) + inertia.x*rho) / (1 + rho);  // normalized using (1+rho)
-                    resultant.y = (component3.y*alpha_ + component2.y*(1.0 - alpha_) + inertia.y*rho) / (1 + rho);
-                    float thetaR = atan2(resultant.y, resultant.x);
+                    resultant.x = (component2.x + component3.x*delta + inertia.x*rho) / (1 + delta + rho);  // normalized using (1+delta+rho)
+                    resultant.y = (component2.y + component3.y*delta + inertia.y*rho) / (1 + delta + rho);
 
                     // add the resultant to the merged_path
                     resultant.x += curr.x;
                     resultant.y += curr.y;
                     mergedPath_.points.push_back(resultant);
 
-                    // adjust the parameters
-                    currTheta_ = thetaC2 - thetaR;
-                    float dTheta = fabs(currTheta_ - prevTheta_);
-                    int dirFactor = (prevTheta_ < 0.0 || currTheta_ < 0.0) ? -1 : 1;    // inverts dTheta when Theta is -ve
-                    gamma_ = kTheta * dTheta * dirFactor;
-
                     // update variables for next iteration
-                    prevTheta_ = currTheta_;
                     idx2++;
                 }
             }
