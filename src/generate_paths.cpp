@@ -9,18 +9,20 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#define LANE_CHANGE 1
-#define RIGHT_TURN 2
-#define U_TURN 3
-#define QUICK_OVERTAKE 4
-#define STOP_SIGN 5
-#define TWO_TURNS 6
+#define LANE_CHANGE     1
+#define RIGHT_TURN      2
+#define U_TURN          3
+#define QUICK_OVERTAKE  4
+#define STOP_SIGN       5
+#define TWO_TURNS       6
 
+// arrays to store path waypoints
 std::vector<float> path1_x, path1_y;
 std::vector<float> path2_x, path2_y;
 
 const float resolution = 0.25;   // meters per pixel
 
+// @brief Computes waypoints for Lane Change scenario
 void laneChange(){
     // path1
     // straight segment 
@@ -57,6 +59,7 @@ void laneChange(){
     }
 }
 
+// @brief Computes waypoints for Right Turn scenario
 void rightTurn(){
     // path1
     // straight segment 
@@ -113,6 +116,7 @@ void rightTurn(){
     }
 }
 
+// @brief Computes waypoints for U-Turn scenario
 void uTurn(){
     // path1
     // straight segment
@@ -160,6 +164,7 @@ void uTurn(){
     }
 }
 
+// @brief Computes waypoints for Stop Sign scenario
 void stopSign(){
     // path1
     // straight segment
@@ -229,6 +234,7 @@ void stopSign(){
     }
 }
 
+// @brief Computes waypoints for Quick Overtake scenario
 void quickOvertake(){
     // path1
     // straight segment
@@ -275,6 +281,7 @@ void quickOvertake(){
     }
 }
 
+// @brief Computes waypoints for Two Turns scenario
 void twoTurns(){
     // path1
     // straight segment
@@ -352,14 +359,15 @@ void twoTurns(){
     }
 }
 
-// shift path2 along Y axis 
+// @brief Shifts all path2 waypoints along Y axis by h
+// @param h Distance to shift
 void shift2InY(float h){
     for(int i = 0; i < (int)path2_y.size(); i++){
         path2_y[i] += h;
     }
 }
 
-// check for path length consistencies
+// @brief Checks for path length consistencies
 void checkPaths(){
     // both the paths should be of equal lengths
     if(path1_x.size() != path1_y.size() || path2_x.size() != path2_y.size() || path1_x.size() != path2_x.size()){
@@ -367,45 +375,45 @@ void checkPaths(){
     }
 }
 
-// compute waypoints for different scenarios
+// @brief Computes path waypoints for different scenarios
+// @param scenario Scenario number
 void computePoints(int scenario){
+    float yShift;
     switch(scenario){
         case 1:
             laneChange();
-            checkPaths();
-            shift2InY(0.25);
+            yShift = 0.25;
             break;
         case 2:
             rightTurn();
-            checkPaths();
-            shift2InY(0.25);
+            yShift = 0.25;
             break;
         case 3:
             uTurn();
-            checkPaths();
-            shift2InY(-0.25);
+            yShift = -0.25;
             break;
         case 4:
             quickOvertake();
-            checkPaths();
-            shift2InY(0.25);
+            yShift = 0.25;
             break;
         case 5:
             stopSign();
-            checkPaths();
-            shift2InY(-0.25);
+            yShift = -0.25;
             break;
         case 6:
             twoTurns();
-            checkPaths();
-            shift2InY(-0.25);
+            yShift = -0.25;
             break;
         default:
             throw "Invalid scenario passed to computePoints()";
             break;
     }
+    shift2InY(yShift);
+    checkPaths();
 }
 
+// @brief Writes the computed path waypoints to a .csv file
+// @param filename Output filename
 void writePathData(std::string filename){
     // create an output filestream object
     std::ofstream pathFile(filename);
@@ -436,7 +444,7 @@ int main(int argc, char * argv[])
     }
 
     // write the vector to CSV
-    writePathData("scenario6.csv");
+    writePathData("scenario" + std::to_string(TWO_TURNS) + ".csv");
 
     rclcpp::shutdown();
     return 0;

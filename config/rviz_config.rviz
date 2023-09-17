@@ -51,9 +51,9 @@ Visualization Manager:
         merged_path: true
         path1: true
         path2: true
-        waypoints1: true
-        waypoints2: true
-        waypoints_merged: true
+        waypoints1: false
+        waypoints2: false
+        waypoints_merged: false
       Topic:
         Depth: 6
         Durability Policy: Volatile

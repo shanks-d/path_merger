@@ -13,47 +13,66 @@ typedef path_merger::msg::Path Path;
 typedef visualization_msgs::msg::Marker Marker;
 using namespace std::chrono_literals;
 
+// @brief Main class to subscribe and visualize paths 
 class Visualize : public rclcpp::Node
 {
   public:
+  // @brief Constructor for the Visualize class
     Visualize()
     : Node("visualize_paths"){
+        // create subscribers for 'path1', 'path2', and 'merged_path' topics
         subPath1_ = this->create_subscription<Path>("path1", 10, std::bind(&Visualize::path1Callback, this, _1));
         subPath2_ = this->create_subscription<Path>("path2", 10, std::bind(&Visualize::path2Callback, this, _1));
         subMergedPath_ = this->create_subscription<Path>("merged_path", 10, std::bind(&Visualize::mergedPathCallback, this, _1));
-
+        // create publisher of visual markers of paths in rviz
         pubPath_ = this->create_publisher<Marker>("path_markers", 10);
 
+        // initialize marker descriptions
         initializeMarkers();
 
-        timer_ = this->create_wall_timer(
-        500ms, std::bind(&Visualize::visualizePaths, this));
+        // create a timer event to publish the path markers while the node is active
+        timer_ = this->create_wall_timer(500ms, std::bind(&Visualize::visualizePaths, this));
     }
 
   private:
+    // @brief Subscriber callback to receive path1 information 
     void path1Callback(const Path::SharedPtr msg){
+        // check if a new path scenario is received
         if(path1_.scenario != msg->scenario){
+            // update the path information
             path1_.points = msg->points;
             path1_.scenario = msg->scenario;
+            // set flag as received
             receivedPath1_ = true;
-            mergedPath_.points.clear();    // clear old merged path in case of new inputs
+            // clear old merged path in case of new inputs
+            mergedPath_.points.clear();
         }
     }
 
+    // @brief Subscriber callback to receive path2 information
     void path2Callback(const Path::SharedPtr msg){
+        // check if a new path scenario is received
         if(path2_.scenario != msg->scenario){
+            // update the path information
             path2_.points = msg->points;
             path2_.scenario = msg->scenario;
+            // set flag as received
             receivedPath2_ = true;
-            mergedPath_.points.clear();    // clear old merged path in case of new inputs
+            // clear old merged path in case of new inputs
+            mergedPath_.points.clear();
         }
     }
 
+    // @brief Subscriber callback to receive merged_path information
     void mergedPathCallback(const Path::SharedPtr msg){
+        // no checks for new infomation as merged_path is only published once
+        // update the path information
         mergedPath_.points = msg->points;
+        // set flag as received
         receivedMergedPath_ = true;
     }
 
+    // @brief Sets the configuration of the visual markers
     void initializeMarkers(){
         lineStrip1_.header.frame_id = lineStrip2_.header.frame_id = lineStripMerged_.header.frame_id = "/visualize";
         linePoints1_.header.frame_id = linePoints2_.header.frame_id = linePointsMerged_.header.frame_id = "/visualize";
@@ -111,6 +130,7 @@ class Visualize : public rclcpp::Node
         linePointsMerged_.color.a = 1.0;
     }
 
+    // @brief Updates the markers with path data and publishes for visualization
     void visualizePaths(){
         // get current time
         rclcpp::Time now = this->get_clock()->now();
@@ -144,20 +164,19 @@ class Visualize : public rclcpp::Node
         }
     }
 
-    Path path1_;
-    Path path2_;
-    Path mergedPath_;
-    rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<Marker>::SharedPtr pubPath_;
-    rclcpp::Subscription<Path>::SharedPtr subPath1_;
-    rclcpp::Subscription<Path>::SharedPtr subPath2_;
-    rclcpp::Subscription<Path>::SharedPtr subMergedPath_;
-    Marker lineStrip1_, lineStrip2_, lineStripMerged_;
-    Marker linePoints1_, linePoints2_, linePointsMerged_;
-    // debouncing flags
-    bool receivedPath1_ = false;
-    bool receivedPath2_ = false;
-    bool receivedMergedPath_ = false;
+    Path path1_;                                                // stores path1 information
+    Path path2_;                                                // stores path2 information
+    Path mergedPath_;                                           // stores merged path information
+    rclcpp::TimerBase::SharedPtr timer_;                        // timer to continuously publish visual markers of paths
+    rclcpp::Publisher<Marker>::SharedPtr pubPath_;              // publishes visual markers of paths
+    rclcpp::Subscription<Path>::SharedPtr subPath1_;            // subscribes path1 information
+    rclcpp::Subscription<Path>::SharedPtr subPath2_;            // subscribes path2 information
+    rclcpp::Subscription<Path>::SharedPtr subMergedPath_;       // subscribes merged_path information
+    Marker lineStrip1_, lineStrip2_, lineStripMerged_;          // markers representing path segments 
+    Marker linePoints1_, linePoints2_, linePointsMerged_;       // markers representing path waypoints
+    bool receivedPath1_ = false;                                // indicates subscription of path1 information
+    bool receivedPath2_ = false;                                // indicates subscription of path2 information
+    bool receivedMergedPath_ = false;                           // indicates subscription of merged_path information
 };
 
 int main(int argc, char * argv[])
