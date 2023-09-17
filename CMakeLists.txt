@@ -28,7 +28,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES geometry_msgs std_msgs
 )
 
-add_executable(merger src/merger.cpp)
+# find headers in the include folder
+include_directories(include)
+
+add_executable(merger src/merger_node.cpp src/merger_obj.cpp)
 ament_target_dependencies(merger rclcpp geometry_msgs)
 rosidl_target_interfaces(merger ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
