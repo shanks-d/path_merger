@@ -11,8 +11,8 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "path_merger/msg/path.hpp"
 
-using Path = path_merger::msg::Path;
-using Point = geometry_msgs::msg::Point;
+typedef path_merger::msg::Path Path;
+typedef geometry_msgs::msg::Point Point;
 using namespace std::chrono_literals;
 
 // system path to the path_merger package
@@ -24,7 +24,8 @@ const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"},
                                                           {4, "Quick Overtake"}, 
                                                           {5, "Stop Sign"},
                                                           {6, "Two Turns"},
-                                                          {7, "Failed Continuity"}};
+                                                          {7, "Failed Continuity"},
+                                                          {8, "Lost Track"}};
 
 class PathPublisher : public rclcpp::Node
 {
@@ -50,7 +51,7 @@ class PathPublisher : public rclcpp::Node
         int test_scenario = this->get_parameter("test_scenario").as_int();
         auto scenario = scenarioNames.find(test_scenario);
         if(scenario == scenarioNames.end()){
-            throw std::runtime_error("Invalid scenario number");
+            throw "ArgumentError: Invalid scenario number entered, select between 1 and 7";
         }
 
         RCLCPP_INFO(this->get_logger(), "Scenario %d selected: %s!", test_scenario, scenario->second.c_str());
@@ -62,7 +63,7 @@ class PathPublisher : public rclcpp::Node
 
         // make sure the file is open
         if(!pathFile.is_open()){
-            throw std::runtime_error("Could not open file");
+            throw "PathError: Could not open file, make sure package directory is correct";
         }
 
         std::string line;
@@ -134,7 +135,14 @@ class PathPublisher : public rclcpp::Node
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<PathPublisher>());
+    
+    try{
+        rclcpp::spin(std::make_shared<PathPublisher>());
+    }
+    catch(char const* error){
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), error);
+    }
+    
     rclcpp::shutdown();
     return 0;
 }

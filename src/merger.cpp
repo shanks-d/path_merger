@@ -9,8 +9,8 @@
 #include "path_merger/msg/path.hpp"
 
 using std::placeholders::_1;
-using Path = path_merger::msg::Path;
-using Point = geometry_msgs::msg::Point;
+typedef path_merger::msg::Path Path;
+typedef geometry_msgs::msg::Point Point;
 using namespace std::chrono_literals;
 
 class Merger : public rclcpp::Node
@@ -80,38 +80,38 @@ class Merger : public rclcpp::Node
     }
 
     bool isInputValid(){
+        bool isValid = true;
+
         // checking for path lengths
         RCLCPP_INFO(this->get_logger(), "Checking for path length requirements...");
         if(path1_.points.size() != path2_.points.size()){
             RCLCPP_WARN(this->get_logger(), "Unequal path lengths, path1: %d, path2: %d", path1_.points.size(), path2_.points.size());
         }
         if((int)path1_.points.size() < minPathLength_){
-            RCLCPP_WARN(this->get_logger(), "Path1 has %d waypoints but minimum required is %d", path1_.points.size(), minPathLength_);
-            return false;
+            RCLCPP_ERROR(this->get_logger(), "Path1 has %d waypoints but minimum required is %d", path1_.points.size(), minPathLength_);
+            isValid = false;
         }
         if((int)path2_.points.size() < minPathLength_){
-            RCLCPP_WARN(this->get_logger(), "Path2 has %d waypoints but minimum required is %d", path2_.points.size(), minPathLength_);
-            return false;
+            RCLCPP_ERROR(this->get_logger(), "Path2 has %d waypoints but minimum required is %d", path2_.points.size(), minPathLength_);
+            isValid = false;
         }
 
         // checking for continuity
         RCLCPP_INFO(this->get_logger(), "Checking for path continuity...");
         for(int i = 1; i < (int)path1_.points.size(); i++){
             if(calcDist(path1_.points[i], path1_.points[i-1]) >= distThreshold_){
-                RCLCPP_WARN(this->get_logger(), "Path1 is not continuous");
-                return false;
+                RCLCPP_ERROR_ONCE(this->get_logger(), "Path1 is inconsistent or not continuous");
+                isValid = false;
             }
         }
         for(int i = 1; i < (int)path2_.points.size(); i++){
             if(calcDist(path2_.points[i], path2_.points[i-1]) >= distThreshold_){
-                RCLCPP_WARN(this->get_logger(), "Path2 is not continuous");
-                return false;
+                RCLCPP_ERROR_ONCE(this->get_logger(), "Path2 is inconsistent or not continuous");
+                isValid = false;
             }
         }
 
-        // passed all checks
-        RCLCPP_INFO(this->get_logger(), "Input paths are valid!");
-        return true;
+        return isValid;
     }
 
     void mergePaths(){
@@ -119,10 +119,12 @@ class Merger : public rclcpp::Node
         if(receivedPath1_ && receivedPath2_){
             // check for path validity before merging
             if(isInputValid()){
+                RCLCPP_INFO(this->get_logger(), "Input paths are valid!");
+
                 int idx1 = findTransitionIndex();
                 // check if path1 is relevant
                 if(calcDist(path1_.points[idx1], path2_.points[0]) >= distThreshold_){
-                    RCLCPP_WARN(this->get_logger(), "Lost track of the old path");
+                    RCLCPP_ERROR(this->get_logger(), "Lost track of the old path, considering new path as merged path");
                     mergedPath_.points = path2_.points;
                 }
                 else{
@@ -130,7 +132,7 @@ class Merger : public rclcpp::Node
                     float kTheta = this->get_parameter("k").as_double();
                     float rho = this->get_parameter("rho").as_double();
                     float delta = this->get_parameter("delta").as_double();
-                    RCLCPP_INFO(this->get_logger(), "Merging with params [beta: %.2f, kTheta: %.2f, delta: %.2f, rho: %.2f]", beta, kTheta, delta, rho);
+                    RCLCPP_INFO(this->get_logger(), "Begin merging of the input paths");
 
                     // copy all the points on path1 until the transition index (included)
                     for(int i = 0; i <= idx1; i++){
@@ -196,10 +198,6 @@ class Merger : public rclcpp::Node
                         float dTheta = currTheta_ - prevTheta_;
                         int dirFactor = (prevTheta_ < 0.0 || currTheta_ < 0.0) ? -1 : 1;    // inverts dTheta when Theta is -ve
                         gamma_ = kTheta * dTheta * dirFactor;
-
-                        // debug logs
-                        RCLCPP_INFO(this->get_logger(), "theta: %f, dTheta: %f, alpha: %f, gamma: %f", 
-                        currTheta_, dTheta, alpha_, gamma_);
                         
                         // update variables for next iteration
                         prevTheta_ = currTheta_;
@@ -250,7 +248,7 @@ class Merger : public rclcpp::Node
                 mergedPath_.points.clear();
             }
             else{
-                RCLCPP_WARN(this->get_logger(), "Validity test failed, ignoring subcribed input paths");
+                RCLCPP_INFO(this->get_logger(), "Validity test failed, ignoring subcribed input paths");
             }
 
             // resetting flags to receive new input paths
@@ -276,7 +274,7 @@ class Merger : public rclcpp::Node
     bool receivedPath2_ = false;
     // constants
     const float distThreshold_ = 0.75;
-    const int minPathLength_ = 10;
+    const int minPathLength_ = 20;
     // parameters
     float alpha_ = 1.0;
     float gamma_ = 0.0;

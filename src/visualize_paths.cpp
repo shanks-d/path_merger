@@ -9,8 +9,8 @@
 #include "path_merger/msg/path.hpp"
 
 using std::placeholders::_1;
-using Path = path_merger::msg::Path;
-using Marker = visualization_msgs::msg::Marker;
+typedef path_merger::msg::Path Path;
+typedef visualization_msgs::msg::Marker Marker;
 using namespace std::chrono_literals;
 
 class Visualize : public rclcpp::Node

@@ -363,9 +363,7 @@ void shift2InY(float h){
 void checkPaths(){
     // both the paths should be of equal lengths
     if(path1_x.size() != path1_y.size() || path2_x.size() != path2_y.size() || path1_x.size() != path2_x.size()){
-        throw std::runtime_error("Unequal path lengths, path1: " + 
-                                    std::to_string(path1_x.size()) + "," + std::to_string(path1_y.size()) + ", path2: " + 
-                                    std::to_string(path2_x.size()) + "," + std::to_string(path2_y.size()));
+        throw "Unequal path lengths";
     }
 }
 
@@ -403,7 +401,7 @@ void computePoints(int scenario){
             shift2InY(-0.25);
             break;
         default:
-            throw std::runtime_error("Invalid scenario");
+            throw "Invalid scenario passed to computePoints()";
             break;
     }
 }
@@ -429,11 +427,16 @@ int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
 
-    // scenarios: LANE_CHANGE, RIGHT_TURN, U_TURN, QUICK_OVERTAKE, STOP_SIGN, TWO_TURNS
-    computePoints(QUICK_OVERTAKE);
-    
+    try{
+        // scenarios: LANE_CHANGE, RIGHT_TURN, U_TURN, QUICK_OVERTAKE, STOP_SIGN, TWO_TURNS
+        computePoints(TWO_TURNS);
+    }
+    catch(char const* error){
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), error);
+    }
+
     // write the vector to CSV
-    writePathData("scenario4.csv");
+    writePathData("scenario6.csv");
 
     rclcpp::shutdown();
     return 0;
