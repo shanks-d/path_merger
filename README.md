@@ -28,9 +28,6 @@ As previously mentioned, the working principle of the merging algorithm implemen
 
 ![vectorSum](media/vectorSum.png)
 
-> [!NOTE]
-> The angle between the path 2 component and the resultant component is represented by $\theta$. We maintain the previous and current values of $\theta$ at every iteration to compute the difference in $\theta$.
-
 Here, path 1 component is the path segment between the previous and current index of path 1, similar is the case for path 2 component. The differential compoment is the line segment that points to the current waypoint index of path 2 from the current index of the merged path. It as a vector representing the error distance between path 2 and the merged path at that instance. Finally, the inertial component is the path segment between the previous and current waypoint index of the merged path. The resultant component is computed by evaluating the following expression,
 
 ```math
@@ -40,13 +37,13 @@ Here, path 1 component is the path segment between the previous and current inde
 > [!NOTE]
 > The bar over the weights indicate that they are normalized such that the summation of all weights equal to 1. Thereby, conserving the magnitude of the resultant component.
 
-The idea is to gradually decrease $\alpha$, corresponding to the influence of path 1 component, to zero starting from 1 while keeping $\rho$ and $\delta$ as constants. Thereby, decereasing $\alpha$ increases (1 - $`\alpha`$) that corresponds to gradually increasing the influence of path 2 component in the resultant. The inertial component prevents the resultant from making drastic changes. Lastly, the differential component nudges the resultant towards the path 2 and ensures that the merged path concides with the path 2 (new path). The decrement of $\alpha$ at every iteration is given by,
+The idea is to gradually decrease $\alpha$, corresponding to the influence of path 1 component, to zero starting from 1 while keeping $\rho$ and $\delta$ as constants. Decreasing $\alpha$ in turn increases (1 - $`\alpha`$) that corresponds to gradually increasing the influence of path 2 component in the resultant. The inertial component prevents the resultant from making drastic changes. Lastly, the differential component nudges the resultant towards the path 2 and ensures that the merged path concides with the path 2. The decrement of $\alpha$ at every iteration is given by,
 
 ```math
 \alpha^+ = \alpha - \beta - \gamma \;, \quad \quad \quad \gamma \propto \theta_{curr} - \theta_{prev}
 ```
 
-Here, $\beta$ is a constant parameter iteratively decreasing $\alpha$ by a fixed amount, while $\gamma$ is positive (thus decreasing $\alpha$) if the resultant is diverging, and negative (thus increasing $\alpha$) if converging to the path 2 component. $\gamma$ is analogous to the derivative part of a PID controller, thus improves the transient behavior of the resultant and outputs a smoother merged path.
+Here, $\theta$ is the angle between the resultant component and path 2 component, which represents the heading error of the merged path. $\beta$ is a constant parameter iteratively decreasing $\alpha$ by a fixed amount, while $\gamma$ is positive (thus decreasing $\alpha$) if the resultant is diverging from path 2, and negative (thus increasing $\alpha$) if the resultant is converging to the path 2 component. $\gamma$ is analogous to the derivative part of a PID controller, thus improves the transient behavior of the resultant and outputs a smoother merged path.
 
 ## Test Scenarios
 Below are the illustrations of the test scenarios as viewed in RViz, where path 1 and 2 are represented in red and green respectively and the merged path is represented in blue. One can control which path data (continuous line and discrete waypoints) to display in the output by toggling corresponding markers under *Namespaces* of the topic `/path_markers`.
