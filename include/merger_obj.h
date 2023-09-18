@@ -45,6 +45,9 @@ class Merger : public rclcpp::Node
     // @param path2 Input path 2
     bool isInputValid(const Path& path1, const Path& path2);
 
+    // @brief Returns true if any of the params were changed and updates them
+    bool getParams();
+
     // @brief Merges the input paths using weighted vector addition
     void mergePaths();
 

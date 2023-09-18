@@ -10,10 +10,10 @@ Merger::Merger()
         std::bind(&Merger::path2Callback, this, _1));
 
         // creating tunable variables as rosparams
-        this->declare_parameter("beta", 0.1);
-        this->declare_parameter("k", 0.6);
-        this->declare_parameter("rho", 1.0);
-        this->declare_parameter("delta", 0.2);
+        this->declare_parameter("beta");    // fixed decrementor of alpha
+        this->declare_parameter("k");       // propotionality constant of gamma
+        this->declare_parameter("rho");     // weight of the inertial component
+        this->declare_parameter("delta");   // weight of the differential component
 
         // create publisher of merged path to 'merged_path' topic
         pubMergedPath_ = this->create_publisher<Path>("merged_path", 10);
@@ -136,8 +136,44 @@ bool Merger::isInputValid(const Path& path1, const Path& path2){
     return isValid;
 }
 
+// @brief Returns true if any of the params were changed and updates them
+bool Merger::getParams(){
+    // get the current values of rosparams
+    float betaCurr = this->get_parameter("beta").as_double();
+    float kThetaCurr = this->get_parameter("k").as_double();
+    float rhoCurr = this->get_parameter("rho").as_double();
+    float deltaCurr = this->get_parameter("delta").as_double();
+
+    // to indicate any changes for logging
+    bool changed = false;
+
+    // update if changed
+    if(betaCurr != beta_){
+        beta_ = betaCurr;
+        changed = true;
+    }
+    if(kThetaCurr != kTheta_){
+        kTheta_ = kThetaCurr;
+        changed = true;
+    }
+    if(rhoCurr != rho_){
+        rho_ = rhoCurr;
+        changed = true;
+    }
+    if(deltaCurr != delta_){
+        delta_ = deltaCurr;
+        changed = true;
+    }
+    return changed;
+}
+
 // @brief Merges the input paths using weighted vector addition
 void Merger::mergePaths(){
+    // log any changes in the rosparams
+    if(getParams()){
+        RCLCPP_INFO(this->get_logger(), "Path Merger node started with params [beta: %0.3f, k: %0.3f, rho: %0.3f, delta: %0.3f]", beta_, kTheta_, rho_, delta_);
+    }
+
     // check if the input paths are subscribed to begin with the merging operation, else wait and do nothing
     if(receivedPath1_ && receivedPath2_){
         // check for path validity before merging
@@ -155,12 +191,6 @@ void Merger::mergePaths(){
             // Merging algorithm
             else{
                 RCLCPP_INFO(this->get_logger(), "Begin merging of the input paths");
-                
-                // retrieve the value of the parameters for merging
-                beta_ = this->get_parameter("beta").as_double();
-                kTheta_ = this->get_parameter("k").as_double();
-                rho_ = this->get_parameter("rho").as_double();
-                delta_ = this->get_parameter("delta").as_double();
 
                 // initializing weights and parameter
                 alpha_ = 1.0;

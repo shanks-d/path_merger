@@ -1,18 +1,9 @@
 <launch>
-  <!-- args that can be set from the command line or a default will be used -->
-  <arg name="beta"  default="0.1"/>
-  <arg name="k"     default="0.6"/>
-  <arg name="rho"   default="1.0"/>
-  <arg name="delta" default="0.2"/>
-
   <!-- include rviz launch file for visualization of the paths -->
   <include file="$(find-pkg-share path_merger)/launch/rviz_launch.py"/>
   
   <!-- start a path_merger node with launch args set to the params -->
   <node pkg="path_merger" exec="merger" name="path_merger">
-    <param name="beta"  value="$(var beta)"/>
-    <param name="k"     value="$(var k)"/>
-    <param name="rho"   value="$(var rho)"/>
-    <param name="delta" value="$(var delta)"/>
+    <param from="$(find-pkg-share path_merger)/config/tuningParams.yaml"/>
   </node>
 </launch>

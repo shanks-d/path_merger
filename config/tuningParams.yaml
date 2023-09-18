@@ -1,0 +1,6 @@
+path_merger:
+  ros__parameters:
+    beta:   0.1		# fixed decrementor of alpha
+    k:      0.6		# propotionality constant of gamma
+    rho:    1.0		# weight of the inertial component
+    delta:  0.2		# weight of the differential component

@@ -125,8 +125,10 @@ To run the *path_merger* node, go to the root of your workspace where the packag
 source install/setup.bash
 ros2 launch path_merger task_launch.xml
 ```
+This will run the merger and visualizer nodes and pop open an RViz window for display using the custom [config file](config/rviz_config.rviz) (refer to the next section to manually setup RViz for visualization).
+
 > [!NOTE]
-> This will run the merger and visualizer nodes and pop open an RViz window for display using the custom [config file](config/rviz_config.rviz) (refer to the next section to manually setup RViz for visualization).
+> For tuning the weights at runtime, use the command `ros2 param set`. Remember to update the params before giving the input paths.
 
 In another terminal, run the *input_path* node by going to the root of your workspace and executing the following command,
 ```
