@@ -98,7 +98,7 @@ This is an unlikely situation, where the starting point of path 2 (green) is alr
 > Very rarely, the visualizer node doesn't display the merged path in RViz although the path merger node has published it successfully. In such a case, either relaunch the merger and visualizer nodes or provide a different test scenario only to change it back to the original scenario.
 
 ## Setup
-This section explains how to install, configure, and use the package in Linux. Make sure you have RViz installed along with ROS 2. If not, refer to the [installation of ROS with GUI tools](https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Debians.html).
+This section explains how to install and use the package in Linux. Make sure you have RViz installed along with ROS 2. If not, refer to the [installation of ROS with GUI tools](https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Debians.html).
 
 > [!IMPORTANT]
 > Before you run any of the commands remember to [source your ROS 2 installation](https://docs.ros.org/en/foxy/Tutorials/Beginner-CLI-Tools/Configuring-ROS2-Environment.html) in every new terminal opened so that `ros2` commands will work.
@@ -117,12 +117,6 @@ git clone https://github.com/shanks-d/path_merger.git
 cd ..
 colcon build --packages-select path_merger
 ```
-
-**Configuration**
-
-Update the variable `packageDir` in the [input_paths.cpp](src/input_paths.cpp) with the correct path to the path_merger package in your system. Go to the location where the package is installed and copy the output of `pwd` command. 
-
-Remember to run `colcon build` from the root of your workspace after changing the variable.
 
 **Usage**
 
@@ -152,6 +146,4 @@ To select a new test case, just press `Ctrl+C` to stop the node and re-run the a
 1. Make sure the *Depth* of the topic is set to 6.
 
 ## Future Work
-Although this package contains a good amount of features, there are a couple things that can make it even better. 
-- [ ] Remove the need to update the `packageDir` variable in the configuration step.
-- [ ] Measure the smoothness of the merged path to allow for better tuning of weights and parameters.
+Although this package contains a good amount of features, there are a few things that can make it even better. For example, finding a way to measure the smoothness of the merged path to allow for better tuning of weights and parameters.

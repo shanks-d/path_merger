@@ -8,15 +8,13 @@
 #include <stdexcept>
 
 #include "rclcpp/rclcpp.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include "geometry_msgs/msg/point.hpp"
 #include "path_merger/msg/path.hpp"
 
 typedef path_merger::msg::Path Path;
 typedef geometry_msgs::msg::Point Point;
 using namespace std::chrono_literals;
-
-// system path to the path_merger package
-#define packageDir "/home/shanks/ros2_ws/src/path_merger"
 
 // mapping scenario numbers to scenario names
 const std::unordered_map<int, std::string> scenarioNames {{1, "Lane Change"}, 
@@ -60,20 +58,25 @@ class PathPublisher : public rclcpp::Node
         // make sure the entered test scenario number is a valid input
         auto scenario = scenarioNames.find(test_scenario);
         if(scenario == scenarioNames.end()){
-            throw "ArgumentError: Invalid scenario number entered, select between 1 and 7";
+            throw std::string("ArgumentError: Invalid scenario number entered, select between 1 and 7");
         }
         RCLCPP_INFO(this->get_logger(), "Scenario %d selected: %s!", test_scenario, scenario->second.c_str());
         
+        // get the path of the package 
+        std::string package_share_directory = ament_index_cpp::get_package_share_directory("path_merger");
+
         // creating system path to the data file in the package
-        std::string filename(packageDir);
-        filename.append("/data/scenario" + std::to_string(test_scenario) + ".csv");
+        int pos = package_share_directory.find("/install/");
+        std::string filename(package_share_directory.begin(), package_share_directory.begin()+pos);
+        filename.append("/src/path_merger/data/scenario" + std::to_string(test_scenario) + ".csv");
 
         // create an input filestream
         std::ifstream pathFile(filename);
 
         // make sure the file is open
         if(!pathFile.is_open()){
-            throw "PathError: Could not open file, make sure package directory is correct";
+            std::string package_directory(package_share_directory.begin(), package_share_directory.begin()+pos);
+            throw std::string("PathError: Could not open file, make sure package directory is correct: " + package_directory + "/src/path_merger");
         }
 
         // variable to store streamed information 
@@ -155,8 +158,8 @@ int main(int argc, char * argv[])
     try{
         rclcpp::spin(std::make_shared<PathPublisher>());
     }
-    catch(char const* error){
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), error);
+    catch(std::string const error){
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), error.c_str());
     }
     
     rclcpp::shutdown();

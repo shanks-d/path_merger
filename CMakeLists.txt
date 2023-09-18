@@ -21,6 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -36,7 +37,7 @@ ament_target_dependencies(merger rclcpp geometry_msgs)
 rosidl_target_interfaces(merger ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_executable(input src/input_paths.cpp)
-ament_target_dependencies(input rclcpp geometry_msgs)
+ament_target_dependencies(input rclcpp geometry_msgs ament_index_cpp)
 rosidl_target_interfaces(input ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_executable(visualize src/visualize_paths.cpp)
